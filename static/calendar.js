@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
-
-    // Modals and form elements
     const orderModal = document.getElementById('orderModal');
     const eventDetailsModal = document.getElementById('eventDetailsModal');
     const eventDetailsContent = document.getElementById('eventDetailsContent');
@@ -12,8 +10,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const submitBtn = form.querySelector('button[type="submit"]');
     const pickupAddressField = document.getElementById('pickupAddress');
     const deliveryAddressField = document.getElementById('deliveryAddress');
+    const searchInput = document.getElementById('searchOrders');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const ordersList = document.getElementById('ordersList');
+    const deliveryRadios = form.querySelectorAll('input[name="delivery"]');
+    const orderTimeInput = form.querySelector('input[name="orderTime"]'); // time input
 
-    let editingOrderId = null; // Track current order being edited
+    let editingOrderId = null;
+    let allOrders = [];
 
     // Initialize FullCalendar
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -22,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function () {
         events: '/events',
         eventClick: function(info) {
             const props = info.event.extendedProps;
+            editingOrderId = info.event.id;
 
-            // Build read-only HTML for event details modal
             eventDetailsContent.innerHTML = `
                 <p><strong>Order:</strong> ${info.event.title}</p>
                 <p><strong>Type:</strong> ${props.eventType || 'N/A'}</p>
@@ -35,29 +39,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p><strong>Delivery Address:</strong> ${props.deliveryAddress || 'N/A'}</p>
                 <button id="editOrderBtn">Edit Order</button>
             `;
-
-            // Store id for editing later
-            editingOrderId = info.event.id;
-
-            // Show event details modal
             eventDetailsModal.style.display = 'block';
 
-            // Setup Edit button listener
             document.getElementById('editOrderBtn').onclick = () => {
-                // Close details modal
                 eventDetailsModal.style.display = 'none';
 
-                // Populate the form with existing data
                 form.name.value = props.name || info.event.title.split(' - ')[0];
                 form.event.value = props.eventType || '';
                 form.theme.value = props.theme || '';
-                form.date.value = info.event.startStr || '';
+                form.date.value = info.event.startStr ? info.event.startStr.slice(0, 10) : '';
+                orderTimeInput.value = info.event.startStr ? info.event.startStr.slice(11, 16) : ''; // HH:mm
                 form.delivery.value = props.delivery || '';
                 form.description.value = props.description || '';
                 form.pickupAddress.value = props.pickupAddress || '';
                 form.deliveryAddress.value = props.deliveryAddress || '';
 
-                // Show/hide pickup/delivery address fields
                 if (props.delivery === 'Pickup') {
                     pickupAddressField.style.display = 'block';
                     deliveryAddressField.style.display = 'none';
@@ -69,19 +65,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     deliveryAddressField.style.display = 'none';
                 }
 
-                // Change submit button text
                 submitBtn.textContent = 'Update Order';
-
-                // Show the order modal (form)
                 orderModal.style.display = 'block';
             };
         }
     });
-
     calendar.render();
 
-    // Delivery option toggle logic inside the form
-    const deliveryRadios = form.querySelectorAll('input[name="delivery"]');
+    // Open new order form
+    openBtn.onclick = () => {
+        editingOrderId = null;
+        submitBtn.textContent = 'Submit Order';
+        form.reset();
+        pickupAddressField.style.display = 'none';
+        deliveryAddressField.style.display = 'none';
+        orderTimeInput.value = '';  // clear time input
+        orderModal.style.display = 'block';
+    };
+
+    // Delivery toggle inside the form
     deliveryRadios.forEach(radio => {
         radio.addEventListener('change', () => {
             if (radio.value === 'Pickup') {
@@ -90,60 +92,34 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (radio.value === 'Delivery') {
                 deliveryAddressField.style.display = 'block';
                 pickupAddressField.style.display = 'none';
+            } else {
+                pickupAddressField.style.display = 'none';
+                deliveryAddressField.style.display = 'none';
             }
         });
     });
 
-    // Open new order modal
-    openBtn.onclick = () => {
-        editingOrderId = null; // Reset editing ID
-        submitBtn.textContent = 'Submit Order'; // Reset button text
-        form.reset();
-        pickupAddressField.style.display = 'none';
-        deliveryAddressField.style.display = 'none';
-        orderModal.style.display = 'block';
-    };
-
-    // Close modals handlers
-    closeOrderModalBtn.onclick = () => {
-        orderModal.style.display = 'none';
-    };
-    closeDetailsModalBtn.onclick = () => {
-        eventDetailsModal.style.display = 'none';
-    };
+    // Close modals
+    closeOrderModalBtn.onclick = () => orderModal.style.display = 'none';
+    closeDetailsModalBtn.onclick = () => eventDetailsModal.style.display = 'none';
     window.onclick = (e) => {
         if (e.target === orderModal) orderModal.style.display = 'none';
         if (e.target === eventDetailsModal) eventDetailsModal.style.display = 'none';
     };
 
-    // Load orders into sidebar list (optional)
-    async function loadOrders() {
-        try {
-            const response = await fetch('/events');
-            if (!response.ok) throw new Error('Failed to fetch events');
-            const orders = await response.json();
-            const ordersList = document.getElementById('ordersList');
-            ordersList.innerHTML = '';
-            orders.forEach(order => {
-                const orderItem = document.createElement('div');
-                orderItem.textContent = `${order.title} on ${order.start}`;
-                ordersList.appendChild(orderItem);
-            });
-        } catch (error) {
-            console.error('Error loading orders:', error);
-        }
-    }
-    loadOrders();
-
-    // Handle form submit: add or update order
+    // Submit form: Add or Update
     form.onsubmit = async function (e) {
         e.preventDefault();
+
+        const date = form.date.value;
+        const time = orderTimeInput.value;
+        const datetimeISO = time ? `${date}T${time}:00` : date;
 
         const order = {
             name: form.name.value,
             event: form.event.value,
             theme: form.theme.value,
-            date: form.date.value,
+            datetime: datetimeISO,  // combined date + time
             delivery: form.delivery.value,
             pickupAddress: form.pickupAddress.value,
             deliveryAddress: form.deliveryAddress.value,
@@ -153,14 +129,12 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             let response;
             if (editingOrderId) {
-                // Update existing order
                 response = await fetch(`/update_order/${editingOrderId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(order)
                 });
             } else {
-                // Add new order
                 response = await fetch('/add_order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -170,21 +144,69 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!response.ok) throw new Error('Failed to save order');
 
-            // Close modals and reset
             orderModal.style.display = 'none';
             form.reset();
             pickupAddressField.style.display = 'none';
             deliveryAddressField.style.display = 'none';
+            orderTimeInput.value = '';
             submitBtn.textContent = 'Submit Order';
             editingOrderId = null;
 
-            // Refresh calendar & list
             calendar.refetchEvents();
             loadOrders();
-
         } catch (error) {
             alert('Error saving order, please try again.');
             console.error('Submit error:', error);
         }
     };
+
+    // Load and filter orders for sidebar
+    async function loadOrders() {
+        try {
+            const response = await fetch('/events');
+            if (!response.ok) throw new Error('Failed to fetch events');
+            allOrders = await response.json();
+            filterAndRenderOrders();
+        } catch (error) {
+            console.error('Error loading orders:', error);
+        }
+    }
+
+    function filterAndRenderOrders() {
+        const query = searchInput.value.toLowerCase();
+        const filtered = allOrders.filter(order =>
+            order.title.toLowerCase().includes(query)
+        );
+        renderOrders(filtered);
+    }
+
+    function renderOrders(orders) {
+        orders.sort((a, b) => new Date(a.start) - new Date(b.start));
+        ordersList.innerHTML = '';
+        orders.forEach(order => {
+            const dateTime = new Date(order.start);
+            ordersList.appendChild(createOrderItem(order.title, dateTime));
+        });
+    }
+
+    function createOrderItem(title, dateTime) {
+        const item = document.createElement('div');
+        item.className = 'order-item';
+        item.textContent = `${title} — ${dateTime.toLocaleDateString()} ${dateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        return item;
+    }
+
+    searchInput.addEventListener('input', filterAndRenderOrders);
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const view = button.getAttribute('data-view');
+            calendar.changeView(view);
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
+
+    // Initial load
+    loadOrders();
 });
