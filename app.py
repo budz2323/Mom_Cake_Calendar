@@ -79,5 +79,12 @@ def update_order(order_id):
     db.session.commit()
     return jsonify({'success': True})
 
+@app.route('/delete_order/<int:order_id>', methods=['DELETE'])
+def delete_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    db.session.delete(order)
+    db.session.commit()
+    return jsonify({'message': 'Order deleted'}), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
