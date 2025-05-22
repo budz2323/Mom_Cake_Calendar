@@ -5,6 +5,7 @@ from models import db, Order
 
 app = Flask(__name__)
 
+
 # Get database URL from environment or fallback to local SQLite
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
 
