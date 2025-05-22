@@ -6,13 +6,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///orders.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
+with app.app_context():
+    db.create_all()
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
 
 @app.route('/events')
 def events():
