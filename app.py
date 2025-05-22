@@ -52,7 +52,7 @@ def events():
     ])
 
 
-@app.route('/add_order', methods=['PUT'])
+@app.route('/add_order', methods=['POST'])
 def add_order():
     data = request.get_json()
     order = Order(
