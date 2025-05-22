@@ -6,8 +6,12 @@ app = Flask(__name__)
 
 # Get database URL from environment or fallback to local SQLite
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://")
+
+# Fix legacy Render issue: convert postgres:// → postgresql://
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
