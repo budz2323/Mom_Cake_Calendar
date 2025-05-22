@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
     <style>
+        /* Your CSS remains unchanged */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -75,6 +76,7 @@
 
         input[type="text"],
         input[type="date"],
+        input[type="time"],
         textarea,
         select {
             width: 100%;
@@ -139,8 +141,8 @@
 
     <div class="main-container">
         <div class="orders-container">
-            <input type="text" id="searchOrders" placeholder="Search orders by name..." style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 16px;" />
-            <div id="filterButtons" style="margin-bottom: 15px;">
+            <input type="text" id="searchOrders" placeholder="Search orders by name..." />
+            <div id="filterButtons">
                 <button data-view="dayGridDay" class="filter-btn">Day</button>
                 <button data-view="timeGridWeek" class="filter-btn">Week</button>
                 <button data-view="dayGridMonth" class="filter-btn active">Month</button>
@@ -224,6 +226,7 @@
             const searchInput = document.getElementById('searchOrders');
             const filterButtons = document.querySelectorAll('.filter-btn');
             const ordersList = document.getElementById('ordersListItems');
+            const orderTimeInput = document.getElementById('orderTime');
 
             let editingOrderId = null;
             let allOrders = [];
@@ -254,22 +257,15 @@
                         form.name.value = props.name || info.event.title.split(' - ')[0];
                         form.event.value = props.eventType || '';
                         form.theme.value = props.theme || '';
-                        form.date.value = info.event.startStr || '';
+                        form.date.value = info.event.startStr.slice(0, 10);
+                        orderTimeInput.value = info.event.startStr.slice(11, 16);
                         form.delivery.value = props.delivery || '';
                         form.description.value = props.description || '';
                         form.pickupAddress.value = props.pickupAddress || '';
                         form.deliveryAddress.value = props.deliveryAddress || '';
 
-                        if (props.delivery === 'Pickup') {
-                            pickupAddressField.style.display = 'block';
-                            deliveryAddressField.style.display = 'none';
-                        } else if (props.delivery === 'Delivery') {
-                            deliveryAddressField.style.display = 'block';
-                            pickupAddressField.style.display = 'none';
-                        } else {
-                            pickupAddressField.style.display = 'none';
-                            deliveryAddressField.style.display = 'none';
-                        }
+                        pickupAddressField.style.display = props.delivery === 'Pickup' ? 'block' : 'none';
+                        deliveryAddressField.style.display = props.delivery === 'Delivery' ? 'block' : 'none';
 
                         submitBtn.textContent = 'Update Order';
                         orderModal.style.display = 'block';
@@ -353,11 +349,16 @@
             }
 
             function renderOrders(orders) {
+                orders.sort((a, b) => new Date(a.start) - new Date(b.start));
                 ordersList.innerHTML = '';
                 orders.forEach(order => {
                     const item = document.createElement('div');
                     item.className = 'order-item';
-                    item.textContent = `${order.title} — ${order.start}`;
+                    const formatted = new Date(order.start).toLocaleString([], {
+                        dateStyle: 'short',
+                        timeStyle: 'short'
+                    });
+                    item.textContent = `${order.title} — ${formatted}`;
                     ordersList.appendChild(item);
                 });
             }
