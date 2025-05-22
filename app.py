@@ -5,8 +5,6 @@ from models import db, Order
 
 app = Flask(__name__)
 
-with app.app_context():
-    db.create_all()
 
 # Get database URL from environment or fallback to local SQLite
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
@@ -19,9 +17,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-###db_uri = os.getenv("DATABASE_URL", "sqlite:///local.db")
+db_uri = os.getenv("DATABASE_URL", "sqlite:///local.db")
 
-###app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 
 db.init_app(app)
 

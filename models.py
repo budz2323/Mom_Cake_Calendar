@@ -13,3 +13,6 @@ class Order(db.Model):
     delivery = db.Column(db.String(50))
     pickup_address = db.Column(db.String(200))
     delivery_address = db.Column(db.String(200))
+
+    def __repr__(self):
+        return f'<Order {self.name} - {self.event}>'
