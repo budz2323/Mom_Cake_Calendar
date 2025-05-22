@@ -52,7 +52,7 @@ def events():
     ])
 
 
-@app.route('/add_order', methods=['POST'])
+@app.route('/add_order', methods=['PUT'])
 def add_order():
     data = request.get_json()
     order = Order(
@@ -67,10 +67,10 @@ def add_order():
     )
     db.session.add(order)
     db.session.commit()
-    return jsonify({'success': True}), 201
+    return jsonify({'success': True}), 200
 
 
-@app.route('/update_order/<int:order_id>', methods=['POST'])
+@app.route('/update_order/<int:order_id>', methods=['PUT'])
 def update_order(order_id):
     data = request.get_json()
     order = Order.query.get_or_404(order_id)

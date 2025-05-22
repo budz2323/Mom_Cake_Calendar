@@ -209,7 +209,7 @@
                         placeholder="e.g. 123 Main St, City"
                     />
                 </div>
-                <button type="submit">Submit Order</button>
+                <button type="submit" id="submitBtn">Submit Order</button>
             </form>
         </div>
     </div>
@@ -289,38 +289,41 @@
                     // Edit button logic
                     document.getElementById("editOrderBtn").onclick = () => {
                         eventDetailsModal.style.display = "none";
-                        form.name.value = props.name || info.event.title.split(" - ")[0];
+
+                        // Event extendedProps
+                        const props = info.event.extendedProps || {};
+
+                        // Set form inputs - make sure the field names match exactly your HTML ids or names
+                        form.name.value = info.event.title || "";
                         form.event.value = props.eventType || "";
                         form.theme.value = props.theme || "";
-                        form.date.value = info.event.startStr || "";
+                        form.date.value = info.event.startStr ? info.event.startStr.split("T")[0] : ""; // just date part
+                        form.orderTime.value = info.event.start ? info.event.start.toISOString().substring(11, 16) : "";
                         form.description.value = props.description || "";
-                        form.pickupAddress.value = props.pickupAddress || "";
-                        form.deliveryAddress.value = props.deliveryAddress || "";
                         form.delivery.value = props.delivery || "";
 
-                        // Pre-fill time input from event.start (HH:mm)
-                        if (info.event.start) {
-                            form.datetime.value = info.event.start
-                                .toISOString()
-                                .substring(11, 16);
-                        } else {
-                            form.datetime.value = "";
-                        }
+                        // Set addresses fields
+                        form.pickupAddress.value = props.pickupAddress || "";
+                        form.deliveryAddress.value = props.deliveryAddress || "";
 
-                        // Show/hide address fields based on delivery value
+                        // Show/hide address fields based on delivery selection
                         if (form.delivery.value === "Pickup") {
                             pickupAddressField.style.display = "block";
                             deliveryAddressField.style.display = "none";
                         } else if (form.delivery.value === "Delivery") {
-                            deliveryAddressField.style.display = "block";
                             pickupAddressField.style.display = "none";
+                            deliveryAddressField.style.display = "block";
                         } else {
                             pickupAddressField.style.display = "none";
                             deliveryAddressField.style.display = "none";
                         }
 
+                        // Save editing event id to a global var to use on form submit
+                        editingOrderId = info.event.id;
+
                         orderModal.style.display = "block";
-                    };
+                        };
+
 
                     // Delete button logic
                     document.getElementById("deleteOrderBtn").onclick = async () => {
