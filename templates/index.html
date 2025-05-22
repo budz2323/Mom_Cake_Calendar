@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Mom's Diary Orders</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
     <style>
         /* Your CSS remains unchanged */
         body {
@@ -162,7 +162,7 @@
             <span class="close" id="closeModal">&times;</span>
             <form id="orderForm">
                 <label for="name">Name:</label>
-                <input type="text" name="name" required>
+                <input type="text" name="name" required />
                 <label for="event">Event Type:</label>
                 <select name="event">
                     <option>Birthday</option>
@@ -171,29 +171,43 @@
                     <option>Other</option>
                 </select>
                 <label for="theme">Theme:</label>
-                <input type="text" name="theme">
+                <input type="text" name="theme" />
                 <label for="date">Date:</label>
-                <input type="date" name="date" required>
+                <input type="date" name="date" required />
                 <label for="orderTime">Time:</label>
                 <input type="time" id="orderTime" name="orderTime" required />
                 <label for="description">Description:</label>
-                <textarea name="description" rows="4" placeholder="Enter cake details, colors, flavors, etc."></textarea>
+                <textarea
+                    name="description"
+                    rows="4"
+                    placeholder="Enter cake details, colors, flavors, etc."
+                ></textarea>
                 <label>Delivery Option:</label>
                 <div class="radio-group">
                     <label class="radio-option">
-                        <input type="radio" name="delivery" value="Pickup" required> Pickup
+                        <input type="radio" name="delivery" value="Pickup" required />
+                        Pickup
                     </label>
                     <label class="radio-option">
-                        <input type="radio" name="delivery" value="Delivery"> Delivery
+                        <input type="radio" name="delivery" value="Delivery" />
+                        Delivery
                     </label>
                 </div>
                 <div id="pickupAddress" class="address-field">
                     <label>Pickup Address:</label>
-                    <input type="text" name="pickupAddress" placeholder="e.g. Your store location">
+                    <input
+                        type="text"
+                        name="pickupAddress"
+                        placeholder="e.g. Your store location"
+                    />
                 </div>
                 <div id="deliveryAddress" class="address-field">
                     <label>Delivery Address:</label>
-                    <input type="text" name="deliveryAddress" placeholder="e.g. 123 Main St, City">
+                    <input
+                        type="text"
+                        name="deliveryAddress"
+                        placeholder="e.g. 123 Main St, City"
+                    />
                 </div>
                 <button type="submit">Submit Order</button>
             </form>
@@ -211,197 +225,280 @@
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const calendarEl = document.getElementById('calendar');
-        const orderModal = document.getElementById('orderModal');
-        const eventDetailsModal = document.getElementById('eventDetailsModal');
-        const eventDetailsContent = document.getElementById('eventDetailsContent');
-        const closeOrderModalBtn = document.getElementById('closeModal');
-        const closeDetailsModalBtn = document.getElementById('closeDetailsModal');
-        const openBtn = document.getElementById('newOrderBtn');
-        const form = document.getElementById('orderForm');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const pickupAddressField = document.getElementById('pickupAddress');
-        const deliveryAddressField = document.getElementById('deliveryAddress');
-        const searchInput = document.getElementById('searchOrders');
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        const ordersList = document.getElementById('ordersListItems');
+        document.addEventListener("DOMContentLoaded", function () {
+            const calendarEl = document.getElementById("calendar");
+            const orderModal = document.getElementById("orderModal");
+            const eventDetailsModal = document.getElementById("eventDetailsModal");
+            const eventDetailsContent = document.getElementById("eventDetailsContent");
+            const closeOrderModalBtn = document.getElementById("closeModal");
+            const closeDetailsModalBtn = document.getElementById("closeDetailsModal");
+            const openBtn = document.getElementById("newOrderBtn");
+            const form = document.getElementById("orderForm");
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const pickupAddressField = document.getElementById("pickupAddress");
+            const deliveryAddressField = document.getElementById("deliveryAddress");
+            const searchInput = document.getElementById("searchOrders");
+            const filterButtons = document.querySelectorAll(".filter-btn");
+            const ordersList = document.getElementById("ordersListItems");
 
-        let editingOrderId = null;
-        let allOrders = [];
+            let editingOrderId = null;
+            let allOrders = [];
 
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            height: 500,
-            events: '/events',
-            eventClick: function(info) {
-                const props = info.event.extendedProps;
-                editingOrderId = info.event.id;
-
-                eventDetailsContent.innerHTML = `
-                    <p><strong>Order:</strong> ${info.event.title}</p>
-                    <p><strong>Type:</strong> ${props.eventType || 'N/A'}</p>
-                    <p><strong>Theme:</strong> ${props.theme || 'N/A'}</p>
-                    <p><strong>Date:</strong> ${info.event.startStr || 'N/A'}</p>
-                    <p><strong>Delivery:</strong> ${props.delivery || 'N/A'}</p>
-                    <p><strong>Description:</strong> ${props.description || 'N/A'}</p>
-                    <p><strong>Pickup Address:</strong> ${props.pickupAddress || 'N/A'}</p>
-                    <p><strong>Delivery Address:</strong> ${props.deliveryAddress || 'N/A'}</p>
-                    <div style="margin-top: 20px;">
-                        <button id="editOrderBtn">Edit Order</button>
-                        <button id="deleteOrderBtn" style="margin-left: 10px; background-color: #c0392b; color: white;">Delete</button>
-                    </div>
-                `;
-                eventDetailsModal.style.display = 'block';
-
-                // Edit button logic
-                document.getElementById('editOrderBtn').onclick = () => {
-                    eventDetailsModal.style.display = 'none';
-                    form.name.value = props.name || info.event.title.split(' - ')[0];
-                    form.event.value = props.eventType || '';
-                    form.theme.value = props.theme || '';
-                    form.date.value = info.event.startStr || '';
-                    form.delivery.value = props.delivery || '';
-                    form.description.value = props.description || '';
-                    form.pickupAddress.value = props.pickupAddress || '';
-                    form.deliveryAddress.value = props.deliveryAddress || '';
-
-                    if (props.delivery === 'Pickup') {
-                        pickupAddressField.style.display = 'block';
-                        deliveryAddressField.style.display = 'none';
-                    } else if (props.delivery === 'Delivery') {
-                        deliveryAddressField.style.display = 'block';
-                        pickupAddressField.style.display = 'none';
-                    } else {
-                        pickupAddressField.style.display = 'none';
-                        deliveryAddressField.style.display = 'none';
+            // Toggle address fields on delivery radio change
+            const deliveryRadios = form.querySelectorAll('input[name="delivery"]');
+            deliveryRadios.forEach((radio) => {
+                radio.addEventListener("change", () => {
+                    if (radio.value === "Pickup" && radio.checked) {
+                        pickupAddressField.style.display = "block";
+                        deliveryAddressField.style.display = "none";
+                    } else if (radio.value === "Delivery" && radio.checked) {
+                        deliveryAddressField.style.display = "block";
+                        pickupAddressField.style.display = "none";
                     }
+                });
+            });
 
-                    submitBtn.textContent = 'Update Order';
-                    orderModal.style.display = 'block';
-                };
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: "dayGridMonth",
+                height: 500,
+                events: "/events",
+                eventClick: function (info) {
+                    const props = info.event.extendedProps;
+                    editingOrderId = info.event.id;
 
-                // Delete button logic
-                document.getElementById('deleteOrderBtn').onclick = async () => {
-                    if (confirm('Are you sure you want to delete this order?')) {
-                        try {
-                            const res = await fetch(`/delete_order/${editingOrderId}`, {
-                                method: 'DELETE'
-                            });
+                    eventDetailsContent.innerHTML = `
+                        <p><strong>Order:</strong> ${info.event.title}</p>
+                        <p><strong>Type:</strong> ${props.eventType || "N/A"}</p>
+                        <p><strong>Theme:</strong> ${props.theme || "N/A"}</p>
+                        <p><strong>Date:</strong> ${info.event.startStr || "N/A"}</p>
+                        <p><strong>Delivery:</strong> ${props.delivery || "N/A"}</p>
+                        <p><strong>Description:</strong> ${props.description || "N/A"}</p>
+                        <p><strong>Pickup Address:</strong> ${
+                          props.pickupAddress || "N/A"
+                        }</p>
+                        <p><strong>Delivery Address:</strong> ${
+                          props.deliveryAddress || "N/A"
+                        }</p>
+                        <div style="margin-top: 20px;">
+                            <button id="editOrderBtn">Edit Order</button>
+                            <button id="deleteOrderBtn" style="margin-left: 10px; background-color: #c0392b; color: white;">Delete</button>
+                        </div>
+                    `;
+                    eventDetailsModal.style.display = "block";
 
-                            if (!res.ok) throw new Error('Failed to delete order');
+                    // Edit button logic
+                    document.getElementById("editOrderBtn").onclick = () => {
+                        eventDetailsModal.style.display = "none";
+                        form.name.value = props.name || info.event.title.split(" - ")[0];
+                        form.event.value = props.eventType || "";
+                        form.theme.value = props.theme || "";
+                        form.date.value = info.event.startStr || "";
+                        form.description.value = props.description || "";
+                        form.pickupAddress.value = props.pickupAddress || "";
+                        form.deliveryAddress.value = props.deliveryAddress || "";
+                        form.delivery.value = props.delivery || "";
 
-                            eventDetailsModal.style.display = 'none';
-                            calendar.refetchEvents();
-                            loadOrders();
-                        } catch (err) {
-                            alert('Error deleting order');
-                            console.error(err);
+                        // Pre-fill time input from event.start (HH:mm)
+                        if (info.event.start) {
+                            form.datetime.value = info.event.start
+                                .toISOString()
+                                .substring(11, 16);
+                        } else {
+                            form.datetime.value = "";
                         }
-                    }
-                };
-            }
-        });
-        calendar.render();
 
-        openBtn.onclick = () => {
-            editingOrderId = null;
-            submitBtn.textContent = 'Submit Order';
-            form.reset();
-            pickupAddressField.style.display = 'none';
-            deliveryAddressField.style.display = 'none';
-            orderModal.style.display = 'block';
-        };
+                        // Show/hide address fields based on delivery value
+                        if (form.delivery.value === "Pickup") {
+                            pickupAddressField.style.display = "block";
+                            deliveryAddressField.style.display = "none";
+                        } else if (form.delivery.value === "Delivery") {
+                            deliveryAddressField.style.display = "block";
+                            pickupAddressField.style.display = "none";
+                        } else {
+                            pickupAddressField.style.display = "none";
+                            deliveryAddressField.style.display = "none";
+                        }
 
-        closeOrderModalBtn.onclick = () => orderModal.style.display = 'none';
-        closeDetailsModalBtn.onclick = () => eventDetailsModal.style.display = 'none';
-        window.onclick = (e) => {
-            if (e.target === orderModal) orderModal.style.display = 'none';
-            if (e.target === eventDetailsModal) eventDetailsModal.style.display = 'none';
-        };
+                        orderModal.style.display = "block";
+                    };
 
-        form.onsubmit = async function (e) {
-            e.preventDefault();
-            const order = {
-                name: form.name.value,
-                event: form.event.value,
-                theme: form.theme.value,
-                date: form.date.value,
-                orderTime: form.orderTime.value,
-                delivery: form.delivery.value,
-                pickupAddress: form.pickupAddress.value,
-                deliveryAddress: form.deliveryAddress.value,
-                description: form.description.value
+                    // Delete button logic
+                    document.getElementById("deleteOrderBtn").onclick = async () => {
+                        if (confirm("Are you sure you want to delete this order?")) {
+                            try {
+                                const response = await fetch(`/delete_order/${editingOrderId}`, {
+                                    method: "DELETE",
+                                });
+                                if (response.ok) {
+                                    alert("Order deleted.");
+                                    eventDetailsModal.style.display = "none";
+                                    calendar.refetchEvents();
+                                    loadOrders();
+                                } else {
+                                    alert("Error deleting order.");
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                alert("Error deleting order.");
+                            }
+                        }
+                    };
+                },
+            });
+
+            calendar.render();
+
+            openBtn.onclick = () => {
+                editingOrderId = null;
+                orderModal.style.display = "block";
+                form.reset();
+                pickupAddressField.style.display = "none";
+                deliveryAddressField.style.display = "none";
+                form.orderTime.value = "";
             };
 
-            try {
-                const url = editingOrderId ? `/update_order/${editingOrderId}` : '/add_order';
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(order)
-                });
-
-                if (!response.ok) throw new Error('Save failed');
-
-                orderModal.style.display = 'none';
+            closeOrderModalBtn.onclick = () => {
+                orderModal.style.display = "none";
                 form.reset();
-                pickupAddressField.style.display = 'none';
-                deliveryAddressField.style.display = 'none';
-                submitBtn.textContent = 'Submit Order';
-                editingOrderId = null;
+                pickupAddressField.style.display = "none";
+                deliveryAddressField.style.display = "none";
+            };
 
-                calendar.refetchEvents();
-                loadOrders();
-            } catch (error) {
-                alert('Error saving order');
-                console.error(error);
+            closeDetailsModalBtn.onclick = () => {
+                eventDetailsModal.style.display = "none";
+            };
+            orderTime
+            window.onclick = (event) => {
+                if (event.target === orderModal) {
+                    orderModal.style.display = "none";
+                    form.reset();
+                    pickupAddressField.style.display = "none";
+                    deliveryAddressField.style.display = "none";
+                }
+                if (event.target === eventDetailsModal) {
+                    eventDetailsModal.style.display = "none";
+                }
+            };
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                // Combine date and time into ISO datetime string
+                const date = formData.get("date");
+                const time = formData.get("orderTime");
+                if (!date || !time) {
+                    alert("Please select both date and time.");
+                    return;
+                }
+                const datetime = `${date}T${time}`;
+
+                const data = {
+                    name: formData.get("name"),
+                    event: formData.get("event"),
+                    theme: formData.get("theme"),
+                    datetime: datetime,
+                    description: formData.get("description"),
+                    delivery: formData.get("delivery"),
+                    pickupAddress: formData.get("pickupAddress"),
+                    deliveryAddress: formData.get("deliveryAddress"),
+                };
+
+                try {
+                    const url = editingOrderId
+                        ? `/update_order/${editingOrderId}`
+                        : "/add_order";
+                    const method = editingOrderId ? "PUT" : "POST";
+
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (response.ok) {
+                        calendar.refetchEvents();
+                        loadOrders();
+                        orderModal.style.display = "none";
+                        form.reset();
+                        pickupAddressField.style.display = "none";
+                        deliveryAddressField.style.display = "none";
+                        editingOrderId = null;
+                    } else {
+                        alert("Failed to save order.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("Error saving order.");
+                }
+            });
+
+            async function loadOrders() {
+                try {
+                    const response = await fetch("/events");
+                    if (!response.ok) throw new Error("Failed to fetch orders");
+                    const events = await response.json();
+                    allOrders = events;
+
+                    filterAndRenderOrders();
+                } catch (error) {
+                    console.error(error);
+                    ordersList.innerHTML = "<p>Error loading orders.</p>";
+                }
             }
-        };
 
-        async function loadOrders() {
-            try {
-                const res = await fetch('/events');
-                if (!res.ok) throw new Error('Failed to fetch orders');
-                allOrders = await res.json();
+            function renderOrders(orders) {
+                ordersList.innerHTML = "";
+                if (orders.length === 0) {
+                    ordersList.innerHTML = "<p>No orders found.</p>";
+                    return;
+                }
+                orders.forEach((order) => {
+                    const el = document.createElement("div");
+                    el.className = "order-item";
+                    const dateObj = new Date(order.start);
+                    const dateStr = dateObj.toLocaleDateString();
+                    const timeStr = dateObj.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                    el.textContent = `${order.title} - ${dateStr} ${timeStr}`;
+                    el.style.cursor = "pointer";
+                    el.onclick = () => {
+                        calendar.getEventById(order.id)?.click();
+                    };
+                    ordersList.appendChild(el);
+                });
+            }
+
+            function filterAndRenderOrders() {
+                const query = searchInput.value.toLowerCase();
+                const filtered = allOrders.filter((order) =>
+                    order.title.toLowerCase().includes(query)
+                );
+
+                // Sort ascending by date/time
+                filtered.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                renderOrders(filtered);
+            }
+
+            searchInput.addEventListener("input", () => {
                 filterAndRenderOrders();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function filterAndRenderOrders() {
-            const query = searchInput.value.toLowerCase();
-            const filtered = allOrders.filter(order =>
-                order.title.toLowerCase().includes(query)
-            );
-            renderOrders(filtered);
-        }
-
-        function renderOrders(orders) {
-            ordersList.innerHTML = '';
-            orders.forEach(order => {
-                const item = document.createElement('div');
-                item.className = 'order-item';
-                item.textContent = `${order.title} — ${order.start}`;
-                ordersList.appendChild(item);
             });
-        }
 
-        searchInput.addEventListener('input', filterAndRenderOrders);
-
-        filterButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const view = button.getAttribute('data-view');
-                calendar.changeView(view);
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
+            filterButtons.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    filterButtons.forEach((b) => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    calendar.changeView(btn.dataset.view);
+                });
             });
+
+            loadOrders();
         });
-
-        loadOrders();
-    });
     </script>
-
 </body>
 </html>

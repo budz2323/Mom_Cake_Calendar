@@ -27,18 +27,21 @@ document.addEventListener('DOMContentLoaded', function () {
         eventClick: function(info) {
             const props = info.event.extendedProps;
             editingOrderId = info.event.id;
+            console.log("Clicked event ID:", info.event.id);
 
             eventDetailsContent.innerHTML = `
                 <p><strong>Order:</strong> ${info.event.title}</p>
                 <p><strong>Type:</strong> ${props.eventType || 'N/A'}</p>
                 <p><strong>Theme:</strong> ${props.theme || 'N/A'}</p>
                 <p><strong>Date:</strong> ${info.event.startStr || 'N/A'}</p>
+                <p><strong>Time:</strong> ${props.datetime || 'N/A'}</p>
                 <p><strong>Delivery:</strong> ${props.delivery || 'N/A'}</p>
                 <p><strong>Description:</strong> ${props.description || 'N/A'}</p>
                 <p><strong>Pickup Address:</strong> ${props.pickupAddress || 'N/A'}</p>
                 <p><strong>Delivery Address:</strong> ${props.deliveryAddress || 'N/A'}</p>
-                <button id="editOrderBtn">Edit Order</button>
+                
             `;
+
             eventDetailsModal.style.display = 'block';
 
             document.getElementById('editOrderBtn').onclick = () => {
@@ -48,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.event.value = props.eventType || '';
                 form.theme.value = props.theme || '';
                 form.date.value = info.event.startStr ? info.event.startStr.slice(0, 10) : '';
-                orderTimeInput.value = info.event.startStr ? info.event.startStr.slice(11, 16) : ''; // HH:mm
+                datetimeInput.value = info.event.startStr ? info.event.startStr.slice(11, 16) : ''; // HH:mm
                 form.delivery.value = props.delivery || '';
                 form.description.value = props.description || '';
                 form.pickupAddress.value = props.pickupAddress || '';
@@ -79,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.reset();
         pickupAddressField.style.display = 'none';
         deliveryAddressField.style.display = 'none';
-        orderTimeInput.value = '';  // clear time input
+        datetimeInput.value = '';  // clear time input
         orderModal.style.display = 'block';
     };
 
@@ -119,12 +122,13 @@ document.addEventListener('DOMContentLoaded', function () {
             name: form.name.value,
             event: form.event.value,
             theme: form.theme.value,
-            datetime: datetimeISO,  // combined date + time
+            datetime: datetimeISO,  // ✅ correct field name
             delivery: form.delivery.value,
             pickupAddress: form.pickupAddress.value,
             deliveryAddress: form.deliveryAddress.value,
             description: form.description.value
         };
+        
 
         try {
             let response;
@@ -148,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
             form.reset();
             pickupAddressField.style.display = 'none';
             deliveryAddressField.style.display = 'none';
-            orderTimeInput.value = '';
+            datetimeInput.value = '';
             submitBtn.textContent = 'Submit Order';
             editingOrderId = null;
 
