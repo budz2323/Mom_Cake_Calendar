@@ -117,8 +117,9 @@ button:hover {
 }
 
 .address-field {
-    margin-top: 10px;
+    display: none;
 }
+
 .filter-btn {
     padding: 8px 12px;
     margin-right: 8px;

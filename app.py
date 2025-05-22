@@ -1,25 +1,36 @@
+import os
 from flask import Flask, render_template, request, jsonify
 from models import db, Order
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///orders.db'
+
+# Get database URL from environment or fallback to local SQLite
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///orders.db')
+
+# Fix legacy Render issue: convert postgres:// → postgresql://
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db.init_app(app)
+
+# Create tables at startup
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.before_first_request
-def create_tables():
-    db.create_all()
 
 @app.route('/events')
 def events():
     orders = Order.query.all()
     return jsonify([
         {
-            "id": o.id,   # unique event id for frontend
+            "id": o.id,
             "title": f"{o.name} - {o.event}",
             "start": o.date,
             "extendedProps": {
@@ -49,7 +60,7 @@ def add_order():
     )
     db.session.add(order)
     db.session.commit()
-    return jsonify({'success': True, 'id': order.id})  # return the new order ID
+    return jsonify({'success': True, 'id': order.id})
 
 @app.route('/update_order/<int:order_id>', methods=['POST'])
 def update_order(order_id):
